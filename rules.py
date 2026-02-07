@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Callable, List, Optional
+import random
 
 
 @dataclass
@@ -9,9 +10,17 @@ class Rule:
 
 
 class RuleManager:
-    def __init__(self, rules: List[Rule], interval: float):
+    def __init__(
+        self,
+        rules: List[Rule],
+        interval: float,
+        combo_rules: Optional[List[Rule]] = None,
+        combo_chance: float = 0.0,
+    ):
         self.rules = rules
         self.interval = interval
+        self.combo_rules = combo_rules or []
+        self.combo_chance = combo_chance
 
         self.timer = 0.0
         self.index = 0
@@ -40,6 +49,17 @@ class RuleManager:
         self.frozen = not self.frozen
 
     def _apply_next_rule(self) -> bool:
+        use_combo = (
+            self.combo_rules
+            and self.combo_chance > 0
+            and random.random() < self.combo_chance
+        )
+
+        if use_combo:
+            self.current_rule = random.choice(self.combo_rules)
+            self.current_rule.apply()
+            return True
+
         self.current_rule = self.rules[self.index]
         self.current_rule.apply()
         self.index = (self.index + 1) % len(self.rules)
